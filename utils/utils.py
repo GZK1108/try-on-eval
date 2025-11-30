@@ -1,6 +1,9 @@
 import skimage.metrics
 import numpy as np
 from scipy.linalg import sqrtm
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning)
 
 class ImageMetrics:
     """
@@ -83,7 +86,7 @@ class ImageMetrics:
         """
         return skimage.metrics.structural_similarity(
             img1, img2, 
-            win_size=7, 
+            win_size=11, 
             channel_axis=-1, 
             data_range=max_val, 
             gaussian_weights=True
@@ -114,9 +117,9 @@ class ImageMetrics:
         """
         if not self.has_torch: return None
         print("Extracting features for FID...")
-        real_feats = self._extract_features(real_imgs)
-        gen_feats = self._extract_features(gen_imgs)
-        return self._calculate_fid_from_features(real_feats, gen_feats)
+        real_feats = self.extract_features(real_imgs)
+        gen_feats = self.extract_features(gen_imgs)
+        return self.calculate_fid_from_features(real_feats, gen_feats)
 
     def _preprocess(self, img, size=None):
         """预处理图像：转 Tensor，调整维度，归一化，可选 Resize"""
@@ -143,7 +146,7 @@ class ImageMetrics:
         
         return img.to(self.device)
 
-    def _extract_features(self, images):
+    def extract_features(self, images):
         """使用 InceptionV3 提取特征"""
         features = []
         batch_size = 32
@@ -188,7 +191,7 @@ class ImageMetrics:
                 
         return np.concatenate(features, axis=0)
 
-    def _calculate_fid_from_features(self, real_feats, gen_feats):
+    def calculate_fid_from_features(self, real_feats, gen_feats):
         """根据特征向量计算 FID"""
         mu1 = np.mean(real_feats, axis=0)
         mu2 = np.mean(gen_feats, axis=0)
@@ -205,7 +208,7 @@ class ImageMetrics:
         fid = diff_squared + np.trace(sigma1 + sigma2 - 2 * covmean)
         return fid
 
-    def evaluate_batch(self, real_imgs, gen_imgs):
+    def evaluate_batch(self, real_imgs, gen_imgs, compute_fid=True):
         """
         评估一批图像，返回平均指标和 FID。
         real_imgs, gen_imgs: list of numpy arrays or numpy array (N, H, W, C)
@@ -228,8 +231,9 @@ class ImageMetrics:
         summary = {k: np.mean(v) for k, v in results.items() if v}
         
         # 计算 FID (需要整个 batch)
-        fid_val = self.compute_fid(real_imgs, gen_imgs)
-        if fid_val is not None:
-            summary['fid'] = fid_val
+        if compute_fid:
+            fid_val = self.compute_fid(real_imgs, gen_imgs)
+            if fid_val is not None:
+                summary['fid'] = fid_val
             
         return summary
