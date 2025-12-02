@@ -1,0 +1,17 @@
+# requirements for try-on-eval
+# NOTE: Install torch/torchvision using the official PyTorch installer for your OS/CUDA: https://pytorch.org
+
+numpy>=1.21
+scikit-image>=0.18
+scipy>=1.7
+Pillow>=8.3
+tqdm>=4.62
+lpips>=0.1.4
+
+# For PyTorch / torchvision, please install the correct binaries for your platform.
+# Example (CPU-only):
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# Or follow https://pytorch.org for CUDA-enabled builds.
+
+# Optional (if you need OpenCV):
+# opencv-python
